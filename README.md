@@ -20,7 +20,7 @@ $ go mod tidy
 
 ```sh
 
-$ gcloud functions deploy Handler --runtime go113 --trigger-http --allow-unauthenticated --env-vars-file .env.yaml
+$ gcloud functions deploy Callback --runtime go113 --trigger-http --allow-unauthenticated --env-vars-file .env.yaml --region asia-northeast1
 
 ```
 

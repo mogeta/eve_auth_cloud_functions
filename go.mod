@@ -1,4 +1,4 @@
-module EVEAuth
+module github.com/mogeta/eve_auth_cloud_functions/EVEAuth
 
 go 1.13
 

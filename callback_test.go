@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestHandler(t *testing.T) {
+func TestCallback(t *testing.T) {
 	tests := []struct {
 		body string
 		want string
@@ -20,7 +20,7 @@ func TestHandler(t *testing.T) {
 		req.Header.Add("Content-Type", "application/json")
 
 		rr := httptest.NewRecorder()
-		Handler(rr, req)
+		Callback(rr, req)
 
 		if got := rr.Body.String(); got != test.want {
 			t.Errorf("HelloHTTP(%q) = %q, want %q", test.body, got, test.want)

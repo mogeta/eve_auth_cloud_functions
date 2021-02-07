@@ -36,6 +36,9 @@ const redirectURL = "https://eve-income.web.app/login?token=%s&eve_token=%s"
 const imageURL = "https://images.evetech.net/characters/%s/portrait?tenant=tranquility"
 const jwkKeyURL = "https://login.eveonline.com/oauth/jwks"
 
+// https://firebase.google.com/docs/hosting/manage-cache?hl=ja#using_cookies
+const cookieString = "__session"
+
 type EVEClaim struct {
 	jwt.StandardClaims
 	Scp    []string `json:"scp"`
@@ -57,8 +60,8 @@ type WriteData struct {
 	Code string
 }
 
-//Handler is EntryPoint for cloud functions.
-func Handler(w http.ResponseWriter, r *http.Request) {
+//Callback is EntryPoint for cloud functions.
+func Callback(w http.ResponseWriter, r *http.Request) {
 	err := godotenv.Load(".env")
 	if err != nil {
 		// .env読めなかった場合の処理
@@ -75,18 +78,22 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//state check
-	stateFromCookie, _ := r.Cookie("__session")
-	state := r.Form.Get("state")
-	if state != stateFromCookie.Value{
-		fmt.Fprint(w, "state error")
-		return
-	}
-
 	//no has code
 	code := r.Form.Get("code")
 	if code == "" {
 		redirect(w, r)
+		return
+	}
+
+	//state check
+	stateFromCookie, err := r.Cookie(cookieString)
+	if err != nil {
+		fmt.Fprint(w,"cookie error")
+		return
+	}
+	state := r.Form.Get("state")
+	if state != stateFromCookie.Value{
+		fmt.Fprint(w, "state error")
 		return
 	}
 
@@ -188,7 +195,7 @@ func generateStateOauthCookie(w http.ResponseWriter) string {
 	b := make([]byte, 16)
 	rand.Read(b)
 	state := base64.URLEncoding.EncodeToString(b)
-	cookie := http.Cookie{Name: "__session", Value: state, Expires: expiration}
+	cookie := http.Cookie{Name: cookieString, Value: state, Expires: expiration}
 	w.Header().Set("Cache-Control","private")
 	http.SetCookie(w, &cookie)
 
