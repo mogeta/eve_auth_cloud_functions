@@ -109,7 +109,7 @@ func Callback(w http.ResponseWriter, r *http.Request) {
 
 func redirect(w http.ResponseWriter, r *http.Request) {
 	state := generateStateOauthCookie(w)
-	url := conf.AuthCodeURL(os.Getenv(state))
+	url := conf.AuthCodeURL(state)
 	http.Redirect(w, r, url, 301)
 }
 
