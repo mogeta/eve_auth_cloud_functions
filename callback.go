@@ -57,7 +57,7 @@ type EVEClaim struct {
 
 type WriteData struct {
 	CharacterID  string
-	Code string
+	token *oauth2.Token
 }
 
 //Callback is EntryPoint for cloud functions.
@@ -151,7 +151,8 @@ func initializeFirebase(code string) (string,string) {
 
 	//write firestore
 	characterID := strings.Split(claim.Sub, ":")[2]
-	firestore.Doc("access_token/" + uid).Set(context.Background(), WriteData{characterID, code})
+	firestore.Doc("access_token/" + uid).Set(context.Background(),
+		WriteData{characterID, token})
 
 	// user update or create
 	var userUpdate = &auth.UserToUpdate{}
