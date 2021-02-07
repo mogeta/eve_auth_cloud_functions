@@ -97,10 +97,6 @@ func Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//
-	token := Exchange(code)
-	conf.TokenSource(context.TODO(),token)
-
 	EVEAccesstoken,firebaseToken := initializeFirebase(code)
 
 	redirect := fmt.Sprintf(redirectURL, firebaseToken, EVEAccesstoken)
