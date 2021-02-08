@@ -32,6 +32,7 @@ var conf = oauth2.Config{
 		TokenURL: "https://login.eveonline.com/v2/oauth/token",
 	},
 }
+
 const redirectURL = "https://eve-income.web.app/login?token=%s&eve_token=%s"
 const imageURL = "https://images.evetech.net/characters/%s/portrait?tenant=tranquility"
 const jwkKeyURL = "https://login.eveonline.com/oauth/jwks"
@@ -55,10 +56,10 @@ type EVEClaim struct {
 	Iss    string   `json:"iss"`
 }
 
-type WriteData struct {
-	CharacterID  string
-	token *oauth2.Token
-}
+//type WriteData struct {
+//	CharacterID  string
+//	token *oauth2.Token
+//}
 
 //Callback is EntryPoint for cloud functions.
 func Callback(w http.ResponseWriter, r *http.Request) {
@@ -69,7 +70,6 @@ func Callback(w http.ResponseWriter, r *http.Request) {
 	conf.RedirectURL = os.Getenv("RedirectURL")
 	conf.ClientID = os.Getenv("ClientID")
 	conf.ClientSecret = os.Getenv("ClientSecret")
-
 
 	//no parameter
 	err = r.ParseForm()
@@ -88,16 +88,16 @@ func Callback(w http.ResponseWriter, r *http.Request) {
 	//state check
 	stateFromCookie, err := r.Cookie(cookieString)
 	if err != nil {
-		fmt.Fprint(w,"cookie error")
+		fmt.Fprint(w, "cookie error")
 		return
 	}
 	state := r.Form.Get("state")
-	if state != stateFromCookie.Value{
+	if state != stateFromCookie.Value {
 		fmt.Fprint(w, "state error")
 		return
 	}
 
-	EVEAccesstoken,firebaseToken := initializeFirebase(code)
+	EVEAccesstoken, firebaseToken := initializeFirebase(code)
 
 	redirect := fmt.Sprintf(redirectURL, firebaseToken, EVEAccesstoken)
 	http.Redirect(w, r, redirect, http.StatusMovedPermanently)
@@ -134,10 +134,9 @@ func fetchClaim(token string) *EVEClaim {
 	return claim
 }
 
-func initializeFirebase(code string) (string,string) {
+func initializeFirebase(code string) (string, string) {
 	token := Exchange(code)
 	claim := fetchClaim(token.AccessToken)
-	uid := claim.Owner + claim.Sub
 
 	//firebase init
 	opt := option.WithCredentialsJSON([]byte(os.Getenv("AdminJsonFile")))
@@ -151,8 +150,11 @@ func initializeFirebase(code string) (string,string) {
 
 	//write firestore
 	characterID := strings.Split(claim.Sub, ":")[2]
-	firestore.Doc("access_token/" + uid).Set(context.Background(),
-		WriteData{characterID, token})
+	uid := claim.Sub
+	_, err = firestore.Doc("access_token/" + uid).Set(context.Background(), token)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// user update or create
 	var userUpdate = &auth.UserToUpdate{}
@@ -173,10 +175,9 @@ func initializeFirebase(code string) (string,string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return token.AccessToken,result
+	return token.AccessToken, result
 }
 
-//トークンの分解。
 func Exchange(authCode string) *oauth2.Token {
 
 	token, err := conf.Exchange(context.TODO(), authCode)
@@ -193,7 +194,7 @@ func generateStateOauthCookie(w http.ResponseWriter) string {
 	rand.Read(b)
 	state := base64.URLEncoding.EncodeToString(b)
 	cookie := http.Cookie{Name: cookieString, Value: state, Expires: expiration}
-	w.Header().Set("Cache-Control","private")
+	w.Header().Set("Cache-Control", "private")
 	http.SetCookie(w, &cookie)
 
 	return state
